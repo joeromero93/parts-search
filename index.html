@@ -425,7 +425,7 @@
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbyYU4BEovQPPaNLkI5Ofbp9RtYgvlXLYDYoHKA9YNYLNCGQdS8a-LBdqIMHBeUeVBtm/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxotcR5xiKrc7_R0CDIYrY7EYLLzb8mG8Ow_Hb06oS8NDPEkPvJIISBFnxKH1l2KcSK/exec";
     const ADMIN_PASSWORD = "7864"; // Edit your administrative unlock PIN/password here
 
     let cachedCatalog = [];
@@ -483,34 +483,47 @@
     };
 
     function getValue(row, column) {
-      if (!row) return '';
-      var cfg = COLUMN_CONFIG[column];
+      if (!row || typeof row !== 'object') return '';
 
-      if (Array.isArray(row)) {
-        if (cfg && row[cfg.index] !== undefined && row[cfg.index] !== null) {
-          return formatValue(row[cfg.index]);
-        }
-        return '';
+      // 1. Strict exact property name match (matches Google Apps Script headers)
+      if (row[column] !== undefined && row[column] !== null) {
+        var exactStr = formatValue(row[column]);
+        if (exactStr !== '') return exactStr;
       }
 
-      if (row[column] !== undefined && row[column] !== null && String(row[column]).trim() !== '') {
-        return formatValue(row[column]);
-      }
+      // 2. Strict normalized key dictionary
+      var targetNormalized = column.toLowerCase().replace(/[^a-z0-9]/g, '');
 
-      if (cfg && cfg.keys) {
-        for (var i = 0; i < cfg.keys.length; i++) {
-          var k = cfg.keys[i];
-          if (row[k] !== undefined && row[k] !== null && String(row[k]).trim() !== '') {
-            return formatValue(row[k]);
+      for (var key in row) {
+        if (!Object.prototype.hasOwnProperty.call(row, key)) continue;
+        
+        var keyNormalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+        if (targetNormalized === 'part') {
+          if (keyNormalized === 'part' || keyNormalized === 'partno' || keyNormalized === 'partnumber') {
+            return formatValue(row[key]);
           }
+        } else if (targetNormalized === 'vendor') {
+          // Must match vendor strictly without '#' or 'no'
+          if (keyNormalized === 'vendor') {
+            return formatValue(row[key]);
+          }
+        } else if (targetNormalized === 'vendor') {
+          // Vendor #
+          if (keyNormalized === 'vendor' || keyNormalized === 'vendorno' || keyNormalized === 'vendornumber') {
+            return formatValue(row[key]);
+          }
+        } else if (targetNormalized === 'print') {
+          // Print #
+          if (keyNormalized === 'print' || keyNormalized === 'printno' || keyNormalized === 'printnumber') {
+            return formatValue(row[key]);
+          }
+        } else if (keyNormalized === targetNormalized) {
+          return formatValue(row[key]);
         }
       }
 
-      var values = Object.values(row);
-      if (cfg && values[cfg.index] !== undefined && values[cfg.index] !== null) {
-        return formatValue(values[cfg.index]);
-      }
-
+      // Return empty string if blank on sheet; do not borrow positional adjacent values
       return '';
     }
 
