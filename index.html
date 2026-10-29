@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Parts Search</title>
+  <title>Inventory Manager</title>
   
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Parts Search">
+  <meta name="apple-mobile-web-app-title" content="Inventory">
 
   <style>
     :root {
@@ -19,6 +19,7 @@
       --text-muted: #6b7280;
       --border: #e5e7eb;
       --danger: #ef4444;
+      --success: #10b981;
     }
 
     * {
@@ -27,6 +28,11 @@
       padding: 0;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    input, textarea {
+      user-select: text;
     }
 
     body {
@@ -34,7 +40,7 @@
       color: var(--text-main);
       padding: 16px;
       padding-top: env(safe-area-inset-top, 16px);
-      padding-bottom: env(safe-area-inset-bottom, 24px);
+      padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 70px);
     }
 
     .container {
@@ -42,6 +48,7 @@
       margin: 0 auto;
     }
 
+    /* Fixed Controls Header */
     .controls {
       display: flex;
       flex-direction: column;
@@ -64,7 +71,7 @@
       flex: 1;
     }
 
-    input[type="text"], input[type="number"] {
+    input[type="text"], input[type="number"], input[type="password"] {
       width: 100%;
       padding: 12px 14px;
       border: 1px solid var(--border);
@@ -105,6 +112,7 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
+      min-height: 44px;
     }
 
     .btn:active {
@@ -118,6 +126,16 @@
       padding: 0 12px;
       font-size: 13px;
       font-weight: 500;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--primary);
+      color: var(--primary);
     }
 
     .status-bar {
@@ -139,13 +157,30 @@
       padding: 16px;
       box-shadow: 0 1px 3px rgba(0,0,0,0.06);
       border: 1px solid var(--border);
+      position: relative;
+    }
+
+    .card-header-flex {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
     }
 
     .card-title {
       font-size: 17px;
       font-weight: 700;
       color: var(--primary);
-      margin-bottom: 4px;
+    }
+
+    .badge-btn {
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      background: #eef2ff;
+      color: var(--primary);
+      border: 1px solid #c7d2fe;
+      cursor: pointer;
     }
 
     .card-desc {
@@ -182,43 +217,223 @@
       text-align: right;
     }
 
+    .rack-badge {
+      display: inline-block;
+      background: #ecfdf5;
+      color: #065f46;
+      border: 1px solid #a7f3d0;
+      padding: 4px 10px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 6px;
+    }
+
     .spinner {
       text-align: center;
       padding: 40px 0;
       color: var(--text-muted);
       font-size: 15px;
     }
+
+    /* Bottom Navigation Bar */
+    .nav-bar {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: #ffffff;
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+      z-index: 100;
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      height: 100%;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      gap: 3px;
+      position: relative;
+    }
+
+    .nav-item.active {
+      color: var(--primary);
+    }
+
+    .nav-counter {
+      position: absolute;
+      top: 6px;
+      right: 25%;
+      background: var(--danger);
+      color: #ffffff;
+      font-size: 11px;
+      border-radius: 10px;
+      padding: 1px 6px;
+      display: none;
+    }
+
+    /* Modal / Popup */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 200;
+    }
+
+    .modal-content {
+      background: #ffffff;
+      border-radius: 12px;
+      width: 100%;
+      max-width: 400px;
+      padding: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 12px;
+    }
+
+    .modal-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 16px;
+    }
   </style>
 </head>
 <body>
 
   <div class="container">
-    <div class="controls">
-      <div class="row">
-        <div class="input-wrapper">
-          <input type="text" id="searchInput" placeholder="Search (use ; for AND)" autocomplete="off">
-          <button class="clear-btn" id="clearSearch">✕</button>
+    
+    <!-- ==================== TAB 1: MAIN SEARCH ==================== -->
+    <div id="tab-search" class="tab-view">
+      <div class="controls">
+        <div class="row">
+          <div class="input-wrapper">
+            <input type="text" id="searchInput" placeholder="Search (use ; for AND)" autocomplete="off">
+            <button class="clear-btn" id="clearSearch">✕</button>
+          </div>
+          <button class="btn" id="syncBtn">Sync</button>
         </div>
-        <button class="btn" id="syncBtn">Sync</button>
+
+        <div class="row">
+          <input type="number" id="partFrom" placeholder="Part From" pattern="[0-9]*" inputmode="numeric">
+          <input type="number" id="partTo" placeholder="Part To" pattern="[0-9]*" inputmode="numeric">
+          <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
+        </div>
       </div>
 
-      <div class="row">
-        <input type="number" id="partFrom" placeholder="Part From" pattern="[0-9]*" inputmode="numeric">
-        <input type="number" id="partTo" placeholder="Part To" pattern="[0-9]*" inputmode="numeric">
-        <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
-      </div>
+      <div class="status-bar" id="statusBar">Connecting to inventory...</div>
+      <div class="card-list" id="cardList"></div>
     </div>
 
-    <div class="status-bar" id="statusBar">Connecting to inventory...</div>
-    <div class="card-list" id="cardList"></div>
+    <!-- ==================== TAB 2: TEMPORARY PICK LIST ==================== -->
+    <div id="tab-picklist" class="tab-view" style="display: none;">
+      <div class="controls">
+        <div class="row" style="align-items: center; justify-content: space-between;">
+          <h2 style="font-size: 18px; font-weight: 700;">Pick List</h2>
+          <button class="btn btn-danger" id="clearPickListBtn" style="min-height: 38px; font-size: 13px;">Clear List</button>
+        </div>
+      </div>
+      <div class="status-bar" id="pickListStatusBar">0 items selected</div>
+      <div class="card-list" id="pickListContainer"></div>
+    </div>
+
+    <!-- ==================== TAB 3: RACK TRACKER ==================== -->
+    <div id="tab-rack" class="tab-view" style="display: none;">
+      <div class="controls">
+        <div class="row">
+          <div class="input-wrapper">
+            <input type="text" id="rackSearchInput" placeholder="Filter assigned racks..." autocomplete="off">
+            <button class="clear-btn" id="clearRackSearch">✕</button>
+          </div>
+          <button class="btn btn-outline" id="adminToggleBtn">Lock 🔒</button>
+        </div>
+        <div class="row" id="adminAddRow" style="display: none;">
+          <button class="btn" id="openAddRackModalBtn" style="width: 100%;">+ Assign Part to Rack</button>
+        </div>
+      </div>
+      <div class="status-bar" id="rackStatusBar">Viewing mode</div>
+      <div class="card-list" id="rackListContainer"></div>
+    </div>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="nav-bar">
+    <div class="nav-item active" data-target="tab-search">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Search</span>
+    </div>
+    <div class="nav-item" data-target="tab-picklist">
+      <span class="nav-counter" id="pickBadge">0</span>
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
+      <span>Pick List</span>
+    </div>
+    <div class="nav-item" data-target="tab-rack" id="rackTabNav">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+      <span>Racks</span>
+    </div>
+  </nav>
+
+  <!-- PIN Modal -->
+  <div class="modal-overlay" id="pinModal">
+    <div class="modal-content">
+      <div class="modal-title">Enter Admin Password</div>
+      <input type="password" id="pinInput" placeholder="Password (default: 1234)" autofocus>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="closePinModal">Cancel</button>
+        <button class="btn" id="submitPin">Unlock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Rack Location Assign Modal -->
+  <div class="modal-overlay" id="rackModal">
+    <div class="modal-content">
+      <div class="modal-title" id="rackModalTitle">Assign Rack Location</div>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        <input type="text" id="rackModalPart" placeholder="Part # (e.g. 1000004)">
+        <input type="text" id="rackModalRack" placeholder="Rack (e.g. Rack 4)">
+        <input type="text" id="rackModalSub" placeholder="Sub-Rack / Section (e.g. Section B)">
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-outline" id="closeRackModal">Cancel</button>
+        <button class="btn" id="saveRackLocationBtn">Save</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    // Set your Google Apps Script URL here
     const API_URL = "https://script.google.com/macros/s/AKfycbyYU4BEovQPPaNLkI5Ofbp9RtYgvlXLYDYoHKA9YNYLNCGQdS8a-LBdqIMHBeUeVBtm/exec";
+    const ADMIN_PASSWORD = "7864"; // Edit your administrative unlock PIN/password here
 
     let cachedCatalog = [];
+    let pickList = JSON.parse(localStorage.getItem('parts_pick_list') || '[]');
+    let rackRegistry = JSON.parse(localStorage.getItem('parts_rack_registry') || '{}');
+    let isAdminUnlocked = false;
 
+    // Element references
     const searchInput = document.getElementById('searchInput');
     const clearSearch = document.getElementById('clearSearch');
     const partFromInput = document.getElementById('partFrom');
@@ -228,6 +443,30 @@
     const statusBar = document.getElementById('statusBar');
     const cardList = document.getElementById('cardList');
 
+    const pickListContainer = document.getElementById('pickListContainer');
+    const pickListStatusBar = document.getElementById('pickListStatusBar');
+    const clearPickListBtn = document.getElementById('clearPickListBtn');
+    const pickBadge = document.getElementById('pickBadge');
+
+    const rackListContainer = document.getElementById('rackListContainer');
+    const rackStatusBar = document.getElementById('rackStatusBar');
+    const rackSearchInput = document.getElementById('rackSearchInput');
+    const clearRackSearch = document.getElementById('clearRackSearch');
+    const adminToggleBtn = document.getElementById('adminToggleBtn');
+    const adminAddRow = document.getElementById('adminAddRow');
+
+    const pinModal = document.getElementById('pinModal');
+    const pinInput = document.getElementById('pinInput');
+    const closePinModal = document.getElementById('closePinModal');
+    const submitPin = document.getElementById('submitPin');
+
+    const rackModal = document.getElementById('rackModal');
+    const rackModalPart = document.getElementById('rackModalPart');
+    const rackModalRack = document.getElementById('rackModalRack');
+    const rackModalSub = document.getElementById('rackModalSub');
+    const closeRackModal = document.getElementById('closeRackModal');
+    const saveRackLocationBtn = document.getElementById('saveRackLocationBtn');
+
     function formatValue(val) {
       if (val === null || val === undefined) return '';
       var str = String(val).trim();
@@ -235,7 +474,7 @@
     }
 
     const COLUMN_CONFIG = {
-      'Part #':      { index: 0, keys: ['Part #', 'Part#', 'Part', 'part', 'part_#'] },
+      'Part #':      { index: 0, keys: ['Part #', 'Part#', 'Part', 'part'] },
       'Description': { index: 1, keys: ['Description', 'description', 'Desc', 'desc'] },
       'Print #':     { index: 2, keys: ['Print #', 'Print#', 'Print', 'print'] },
       'Vendor':      { index: 3, keys: ['Vendor', 'vendor'] },
@@ -247,7 +486,6 @@
       if (!row) return '';
       var cfg = COLUMN_CONFIG[column];
 
-      // Array format
       if (Array.isArray(row)) {
         if (cfg && row[cfg.index] !== undefined && row[cfg.index] !== null) {
           return formatValue(row[cfg.index]);
@@ -255,12 +493,10 @@
         return '';
       }
 
-      // Exact key
       if (row[column] !== undefined && row[column] !== null && String(row[column]).trim() !== '') {
         return formatValue(row[column]);
       }
 
-      // Alias keys
       if (cfg && cfg.keys) {
         for (var i = 0; i < cfg.keys.length; i++) {
           var k = cfg.keys[i];
@@ -270,7 +506,6 @@
         }
       }
 
-      // Positional order of object values
       var values = Object.values(row);
       if (cfg && values[cfg.index] !== undefined && values[cfg.index] !== null) {
         return formatValue(values[cfg.index]);
@@ -279,6 +514,34 @@
       return '';
     }
 
+    // ==================== NAVIGATION ====================
+    document.querySelectorAll('.nav-item').forEach(item => {
+      item.addEventListener('click', () => {
+        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
+        document.querySelectorAll('.tab-view').forEach(t => t.style.display = 'none');
+        
+        item.classList.add('active');
+        const targetId = item.getAttribute('data-target');
+        document.getElementById(targetId).style.display = 'block';
+
+        if (targetId === 'tab-picklist') renderPickList();
+        if (targetId === 'tab-rack') renderRackList();
+      });
+    });
+
+    // Secret long-press on Rack tab button to open unlock modal
+    let rackPressTimer;
+    const rackTabNav = document.getElementById('rackTabNav');
+    rackTabNav.addEventListener('touchstart', () => {
+      rackPressTimer = setTimeout(() => { openPinPrompt(); }, 1200);
+    });
+    rackTabNav.addEventListener('touchend', () => clearTimeout(rackPressTimer));
+    rackTabNav.addEventListener('mousedown', () => {
+      rackPressTimer = setTimeout(() => { openPinPrompt(); }, 1200);
+    });
+    rackTabNav.addEventListener('mouseup', () => clearTimeout(rackPressTimer));
+
+    // ==================== TAB 1: SEARCH & INVENTORY ====================
     async function fetchInventory() {
       statusBar.innerText = "Syncing catalog with Google Sheets...";
       cardList.innerHTML = '<div class="spinner">Fetching data...</div>';
@@ -290,7 +553,7 @@
         applyFilters();
       } catch (err) {
         statusBar.innerText = "Error syncing with sheet: " + err.message;
-        cardList.innerHTML = '<div class="spinner" style="color:var(--danger)">Failed to load inventory. Check console or tap Sync.</div>';
+        cardList.innerHTML = '<div class="spinner" style="color:var(--danger)">Failed to load inventory. Check network or tap Sync.</div>';
       }
     }
 
@@ -304,11 +567,10 @@
 
       var keywords = rawQuery
         .split(';')
-        .map(function(s) { return s.trim().toLowerCase(); })
-        .filter(function(s) { return s.length > 0; });
+        .map(s => s.trim().toLowerCase())
+        .filter(s => s.length > 0);
 
-      var filtered = cachedCatalog.filter(function(row) {
-        // Range filter
+      var filtered = cachedCatalog.filter(row => {
         var partNumber = parseInt(getValue(row, 'Part #'), 10);
         var matchesRange = true;
         if (!isNaN(fromVal) && !isNaN(toVal)) {
@@ -320,12 +582,10 @@
         }
 
         if (!matchesRange) return false;
-
-        // Keyword filter
         if (keywords.length === 0) return true;
 
         var rowContent = Object.values(row).join(" ").toLowerCase();
-        return keywords.every(function(kw) { return rowContent.indexOf(kw) !== -1; });
+        return keywords.every(kw => rowContent.indexOf(kw) !== -1);
       });
 
       renderList(filtered);
@@ -333,7 +593,6 @@
 
     function renderList(items) {
       if (!cachedCatalog || cachedCatalog.length === 0) return;
-
       statusBar.innerText = "Showing " + items.length + " of " + cachedCatalog.length + " parts";
 
       if (items.length === 0) {
@@ -343,34 +602,259 @@
 
       var metaFields = ["Print #", "Vendor", "Vendor #", "Size"];
 
-      cardList.innerHTML = items.map(function(row) {
+      cardList.innerHTML = items.map((row, idx) => {
         var partNo = getValue(row, 'Part #') || "N/A";
         var desc = getValue(row, 'Description');
+        var rackInfo = rackRegistry[partNo];
 
-        var metaRows = metaFields.map(function(field) {
+        var metaRows = metaFields.map(field => {
           var val = getValue(row, field);
           if (!val) return '';
           return '<div class="meta-row"><span class="meta-label">' + field + '</span><span class="meta-value">' + val + '</span></div>';
         }).join('');
 
-        return '<div class="card">' +
-               '<div class="card-title">Part: ' + partNo + '</div>' +
-               (desc ? '<div class="card-desc">' + desc + '</div>' : '') +
-               (metaRows ? '<div class="divider"></div><div class="card-meta">' + metaRows + '</div>' : '') +
-               '</div>';
+        return `
+          <div class="card" data-part="${partNo}" oncontextmenu="return false;">
+            <div class="card-header-flex">
+              <div class="card-title">Part: ${partNo}</div>
+              <button class="badge-btn" onclick="addToPickList('${partNo}')">+ Pick</button>
+            </div>
+            ${desc ? `<div class="card-desc">${desc}</div>` : ''}
+            ${rackInfo ? `<div><span class="rack-badge">📍 ${rackInfo.rack} • ${rackInfo.sub}</span></div>` : ''}
+            ${metaRows ? `<div class="divider"></div><div class="card-meta">${metaRows}</div>` : ''}
+          </div>
+        `;
+      }).join('');
+
+      bindLongPressToCards();
+    }
+
+    function bindLongPressToCards() {
+      document.querySelectorAll('#cardList .card').forEach(card => {
+        let timer;
+        const partNo = card.getAttribute('data-part');
+
+        const start = () => {
+          timer = setTimeout(() => {
+            addToPickList(partNo);
+            if (navigator.vibrate) navigator.vibrate(50);
+          }, 600);
+        };
+        const cancel = () => clearTimeout(timer);
+
+        card.addEventListener('touchstart', start);
+        card.addEventListener('touchend', cancel);
+        card.addEventListener('mousedown', start);
+        card.addEventListener('mouseup', cancel);
+      });
+    }
+
+    // ==================== TAB 2: TEMPORARY PICK LIST ====================
+    window.addToPickList = function(partNo) {
+      if (!partNo || partNo === "N/A") return;
+      const existing = cachedCatalog.find(r => getValue(r, 'Part #') === partNo);
+      if (!existing) return;
+
+      const desc = getValue(existing, 'Description');
+      const vendor = getValue(existing, 'Vendor');
+
+      pickList.push({
+        id: Date.now() + Math.random(),
+        partNo: partNo,
+        desc: desc,
+        vendor: vendor,
+        addedAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+      });
+
+      localStorage.setItem('parts_pick_list', JSON.stringify(pickList));
+      updatePickBadge();
+      alert(`Part ${partNo} added to Pick List`);
+    };
+
+    function updatePickBadge() {
+      if (pickList.length > 0) {
+        pickBadge.style.display = 'block';
+        pickBadge.innerText = pickList.length;
+      } else {
+        pickBadge.style.display = 'none';
+      }
+    }
+
+    function renderPickList() {
+      pickListStatusBar.innerText = `${pickList.length} item(s) selected`;
+
+      if (pickList.length === 0) {
+        pickListContainer.innerHTML = '<div class="spinner">Pick List is empty. Long-press parts or tap "+ Pick" on the search tab.</div>';
+        return;
+      }
+
+      pickListContainer.innerHTML = pickList.map(item => `
+        <div class="card">
+          <div class="card-header-flex">
+            <div class="card-title">Part: ${item.partNo}</div>
+            <button class="badge-btn" style="color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="removePickItem(${item.id})">Remove</button>
+          </div>
+          ${item.desc ? `<div class="card-desc">${item.desc}</div>` : ''}
+          <div class="divider"></div>
+          <div class="card-meta">
+            <div class="meta-row"><span class="meta-label">Vendor</span><span class="meta-value">${item.vendor || 'N/A'}</span></div>
+            <div class="meta-row"><span class="meta-label">Added</span><span class="meta-value">${item.addedAt}</span></div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    window.removePickItem = function(id) {
+      pickList = pickList.filter(item => item.id !== id);
+      localStorage.setItem('parts_pick_list', JSON.stringify(pickList));
+      updatePickBadge();
+      renderPickList();
+    };
+
+    clearPickListBtn.addEventListener('click', () => {
+      if (pickList.length === 0) return;
+      const confirmClear = window.confirm("Are you sure you want to clear all items from your Pick List?");
+      if (confirmClear) {
+        pickList = [];
+        localStorage.removeItem('parts_pick_list');
+        updatePickBadge();
+        renderPickList();
+      }
+    });
+
+    // ==================== TAB 3: RACK TRACKER ====================
+    function renderRackList() {
+      const q = (rackSearchInput.value || '').toLowerCase();
+      const parts = Object.keys(rackRegistry).filter(part => {
+        const item = rackRegistry[part];
+        const matchStr = `${part} ${item.rack} ${item.sub}`.toLowerCase();
+        return matchStr.includes(q);
+      });
+
+      rackStatusBar.innerText = `${parts.length} rack assignments saved ${isAdminUnlocked ? '• Admin Unlocked' : '• Read-Only'}`;
+
+      if (parts.length === 0) {
+        rackListContainer.innerHTML = '<div class="spinner">No rack locations assigned yet.</div>';
+        return;
+      }
+
+      rackListContainer.innerHTML = parts.map(partNo => {
+        const item = rackRegistry[partNo];
+        return `
+          <div class="card">
+            <div class="card-header-flex">
+              <div class="card-title">Part: ${partNo}</div>
+              ${isAdminUnlocked ? `
+                <div style="display:flex; gap:6px;">
+                  <button class="badge-btn" onclick="editRackLocation('${partNo}')">Edit</button>
+                  <button class="badge-btn" style="color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="deleteRackLocation('${partNo}')">Delete</button>
+                </div>
+              ` : ''}
+            </div>
+            <div>
+              <span class="rack-badge">📍 ${item.rack} • ${item.sub}</span>
+            </div>
+          </div>
+        `;
       }).join('');
     }
 
+    function openPinPrompt() {
+      if (isAdminUnlocked) {
+        if (window.confirm("Lock admin editing mode?")) {
+          isAdminUnlocked = false;
+          adminToggleBtn.innerText = "Lock 🔒";
+          adminAddRow.style.display = "none";
+          renderRackList();
+          renderList(cachedCatalog);
+        }
+        return;
+      }
+      pinInput.value = '';
+      pinModal.style.display = 'flex';
+    }
+
+    adminToggleBtn.addEventListener('click', openPinPrompt);
+    closePinModal.addEventListener('click', () => pinModal.style.display = 'none');
+
+    submitPin.addEventListener('click', () => {
+      if (pinInput.value === ADMIN_PASSWORD) {
+        isAdminUnlocked = true;
+        pinModal.style.display = 'none';
+        adminToggleBtn.innerText = "Unlocked 🔓";
+        adminAddRow.style.display = "flex";
+        renderRackList();
+        renderList(cachedCatalog);
+      } else {
+        alert("Incorrect password.");
+      }
+    });
+
+    document.getElementById('openAddRackModalBtn').addEventListener('click', () => {
+      document.getElementById('rackModalTitle').innerText = "Assign Rack Location";
+      rackModalPart.value = '';
+      rackModalPart.disabled = false;
+      rackModalRack.value = '';
+      rackModalSub.value = '';
+      rackModal.style.display = 'flex';
+    });
+
+    closeRackModal.addEventListener('click', () => rackModal.style.display = 'none');
+
+    saveRackLocationBtn.addEventListener('click', () => {
+      const part = rackModalPart.value.trim();
+      const rack = rackModalRack.value.trim();
+      const sub = rackModalSub.value.trim();
+
+      if (!part || !rack) {
+        alert("Part # and Rack are required.");
+        return;
+      }
+
+      rackRegistry[part] = { rack: rack, sub: sub || 'General' };
+      localStorage.setItem('parts_rack_registry', JSON.stringify(rackRegistry));
+      rackModal.style.display = 'none';
+      renderRackList();
+      applyFilters();
+    });
+
+    window.editRackLocation = function(partNo) {
+      const current = rackRegistry[partNo];
+      if (!current) return;
+      document.getElementById('rackModalTitle').innerText = `Edit Location: ${partNo}`;
+      rackModalPart.value = partNo;
+      rackModalPart.disabled = true;
+      rackModalRack.value = current.rack;
+      rackModalSub.value = current.sub;
+      rackModal.style.display = 'flex';
+    };
+
+    window.deleteRackLocation = function(partNo) {
+      if (window.confirm(`Delete rack mapping for Part ${partNo}?`)) {
+        delete rackRegistry[partNo];
+        localStorage.setItem('parts_rack_registry', JSON.stringify(rackRegistry));
+        renderRackList();
+        applyFilters();
+      }
+    };
+
+    rackSearchInput.addEventListener('input', renderRackList);
+    clearRackSearch.addEventListener('click', () => {
+      rackSearchInput.value = '';
+      renderRackList();
+    });
+
+    // ==================== EVENT LISTENERS & INIT ====================
     searchInput.addEventListener('input', applyFilters);
     partFromInput.addEventListener('input', applyFilters);
     partToInput.addEventListener('input', applyFilters);
 
-    clearSearch.addEventListener('click', function() {
+    clearSearch.addEventListener('click', () => {
       searchInput.value = '';
       applyFilters();
     });
 
-    resetBtn.addEventListener('click', function() {
+    resetBtn.addEventListener('click', () => {
       searchInput.value = '';
       partFromInput.value = '';
       partToInput.value = '';
@@ -379,8 +863,9 @@
 
     syncBtn.addEventListener('click', fetchInventory);
 
+    // Initial setup
+    updatePickBadge();
     fetchInventory();
   </script>
 </body>
 </html>
-
