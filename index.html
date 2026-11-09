@@ -199,7 +199,7 @@
       });
     }
 
-    const API_URL = "https://script.google.com/macros/s/AKfycbyYU4BEovQPPaNLkI50fbp9RtYgvlXLYDYOHKA9YNYLNCGQdS8a-LBdqIMHBeUeVBtm/exec";
+    const API_URL = "https://script.google.com/macros/s/AKfycbxotcR5xiKrc7_R0CDIYrY7EYLLzb8mG8Ow_Hb06oS8NDPEkPvJIISBFnxKH1l2KcSK/exec";
 
     let catalog = [];
     let pickList = JSON.parse(localStorage.getItem('parts_pick_list') || '[]');
@@ -238,32 +238,46 @@
       return '';
     }
 
-    async function syncCatalog() {
+    function syncCatalog() {
       const status = document.getElementById('statusBar');
       status.innerText = "Syncing catalog from Google Sheets...";
-      try {
-        // Standard GET without custom headers to avoid CORS preflight blocks
-        const res = await fetch(API_URL);
 
-        if (!res.ok) {
-          throw new Error(`HTTP ${res.status}`);
-        }
+      // Define unique callback name
+      const callbackName = "handleCatalogResponse_" + Date.now();
 
-        const data = await res.json();
+      // Setup global listener
+      window[callbackName] = function(data) {
+        // Clean up DOM script tag & callback
+        delete window[callbackName];
+        const scriptEl = document.getElementById(callbackName);
+        if (scriptEl) scriptEl.remove();
+
         catalog = data;
         localStorage.setItem('parts_catalog_cache', JSON.stringify(data));
         renderSearch();
-      } catch (err) {
-        console.error("Sync error:", err);
+      };
+
+      // Append script tag to fetch data bypassing CORS
+      const script = document.createElement('script');
+      script.id = callbackName;
+      script.src = `${API_URL}?callback=${callbackName}`;
+      
+      script.onerror = function() {
+        delete window[callbackName];
+        script.remove();
+        console.error("Script load error from Google Sheets");
+
         const cached = localStorage.getItem('parts_catalog_cache');
         if (cached && cached !== "[]") {
           catalog = JSON.parse(cached);
           status.innerText = `Offline: showing ${catalog.length} cached parts.`;
           renderSearch();
         } else {
-          status.innerText = `Sync failed: ${err.message}. Check URL & permissions.`;
+          status.innerText = "Sync failed: Network error. Check internet connection.";
         }
-      }
+      };
+
+      document.body.appendChild(script);
     }
 
     function renderSearch() {
