@@ -242,16 +242,11 @@
       const status = document.getElementById('statusBar');
       status.innerText = "Syncing catalog from Google Sheets...";
       try {
-        const res = await fetch(API_URL, {
-          method: "GET",
-          redirect: "follow",
-          headers: {
-            "Accept": "application/json"
-          }
-        });
+        // Standard GET without custom headers to avoid CORS preflight blocks
+        const res = await fetch(API_URL);
 
         if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
+          throw new Error(`HTTP ${res.status}`);
         }
 
         const data = await res.json();
@@ -263,10 +258,10 @@
         const cached = localStorage.getItem('parts_catalog_cache');
         if (cached && cached !== "[]") {
           catalog = JSON.parse(cached);
-          status.innerText = `Offline mode: showing ${catalog.length} cached parts.`;
+          status.innerText = `Offline: showing ${catalog.length} cached parts.`;
           renderSearch();
         } else {
-          status.innerText = `Sync failed: ${err.message}. Check Apps Script URL / Permissions.`;
+          status.innerText = `Sync failed: ${err.message}. Check URL & permissions.`;
         }
       }
     }
