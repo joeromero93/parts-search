@@ -242,17 +242,31 @@
       const status = document.getElementById('statusBar');
       status.innerText = "Syncing catalog from Google Sheets...";
       try {
-        const res = await fetch(API_URL);
+        const res = await fetch(API_URL, {
+          method: "GET",
+          redirect: "follow",
+          headers: {
+            "Accept": "application/json"
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+
         const data = await res.json();
         catalog = data;
         localStorage.setItem('parts_catalog_cache', JSON.stringify(data));
         renderSearch();
       } catch (err) {
-        status.innerText = "Offline. Showing cached catalog.";
+        console.error("Sync error:", err);
         const cached = localStorage.getItem('parts_catalog_cache');
-        if (cached) {
+        if (cached && cached !== "[]") {
           catalog = JSON.parse(cached);
+          status.innerText = `Offline mode: showing ${catalog.length} cached parts.`;
           renderSearch();
+        } else {
+          status.innerText = `Sync failed: ${err.message}. Check Apps Script URL / Permissions.`;
         }
       }
     }
@@ -474,6 +488,46 @@
         alert('Incorrect PIN');
       }
     });
+
+    function renderRacks() {
+      const container = document.getElementById('rackList');
+      const filter = (document.getElementById('rackFilterInput')?.value || '').toLowerCase().trim();
+      container.innerHTML = '';
+
+      const entries = Object.entries(rackRegistry).filter(([part, loc]) => {
+        const haystack = `${part} ${loc.rack} ${loc.sub}`.toLowerCase();
+        return haystack.includes(filter);
+      });
+
+      document.getElementById('rackStatusBar').innerText = `${entries.length} rack entries recorded`;
+
+      if (entries.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 40px; font-size: 14px;">No rack assignments recorded yet.</div>`;
+        return;
+      }
+
+      entries.forEach(([partNo, loc]) => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-head">
+            <span class="part-title">Part: ${partNo}</span>
+            ${isAdminUnlocked ? `<button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger); padding: 4px 8px;" onclick="deleteRackEntry('${partNo}')">🗑️</button>` : ''}
+          </div>
+          <div class="part-loc">📍 ${loc.rack} • ${loc.sub}</div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function deleteRackEntry(partNo) {
+      if (confirm(`Remove rack assignment for part ${partNo}?`)) {
+        delete rackRegistry[partNo];
+        localStorage.setItem('parts_rack_registry', JSON.stringify(rackRegistry));
+        renderRacks();
+        renderSearch();
+      }
+    }
   
     // --- Event Listeners & Initialization ---
     document.getElementById('searchInput').addEventListener('input', renderSearch);
