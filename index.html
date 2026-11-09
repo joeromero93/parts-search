@@ -3,882 +3,510 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Inventory Manager</title>
-  
+  <title>Parts Search</title>
+  <link rel="manifest" href="./manifest.json">
+  <meta name="theme-color" content="#4f46e5">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Inventory">
-
   <style>
     :root {
-      --bg: #f8f9fa;
-      --card-bg: #ffffff;
       --primary: #4f46e5;
       --primary-hover: #4338ca;
-      --text-main: #1f2937;
-      --text-muted: #6b7280;
-      --border: #e5e7eb;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --badge-bg: #ecfdf5;
+      --badge-text: #065f46;
       --danger: #ef4444;
-      --success: #10b981;
     }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    body { background: var(--bg); color: var(--text); padding-bottom: 70px; }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-      -webkit-tap-highlight-color: transparent;
-      user-select: none;
+    header {
+      position: sticky; top: 0; background: var(--card-bg); border-bottom: 1px solid var(--border);
+      padding: 12px 16px; z-index: 10;
     }
-
-    input, textarea {
-      user-select: text;
-    }
-
-    body {
-      background-color: var(--bg);
-      color: var(--text-main);
-      padding: 16px;
-      padding-top: env(safe-area-inset-top, 16px);
-      padding-bottom: calc(env(safe-area-inset-bottom, 24px) + 70px);
-    }
-
-    .container {
-      max-width: 600px;
-      margin: 0 auto;
-    }
-
-    /* Fixed Controls Header */
-    .controls {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 16px;
-      position: sticky;
-      top: 0;
-      background: var(--bg);
-      padding-bottom: 8px;
-      z-index: 10;
-    }
-
-    .row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .input-wrapper {
-      position: relative;
-      flex: 1;
-    }
-
+    .input-row { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
     input[type="text"], input[type="number"], input[type="password"] {
-      width: 100%;
-      padding: 12px 14px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      font-size: 16px;
-      background: #ffffff;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; outline: none;
     }
-
-    input:focus {
-      border-color: var(--primary);
-    }
-
-    .clear-btn {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      background: none;
-      border: none;
-      font-size: 16px;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: none;
-      padding: 4px;
-    }
-
+    input:focus { border-color: var(--primary); }
     .btn {
-      background: var(--primary);
-      color: #ffffff;
-      border: none;
-      border-radius: 8px;
-      padding: 0 16px;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 44px;
+      padding: 10px 16px; border: none; border-radius: 8px; font-weight: 600; font-size: 14px;
+      cursor: pointer; background: var(--primary); color: #fff; white-space: nowrap;
     }
+    .btn-secondary { background: #e2e8f0; color: var(--text); }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-    .btn:active {
-      background: var(--primary-hover);
-    }
+    .status-bar { font-size: 12px; color: var(--text-muted); display: flex; justify-content: space-between; align-items: center; margin-top: 4px; }
 
-    .btn-reset {
-      background: none;
-      color: var(--danger);
-      border: 1px solid var(--border);
-      padding: 0 12px;
-      font-size: 13px;
-      font-weight: 500;
-    }
-
-    .btn-danger {
-      background: var(--danger);
-    }
-
-    .btn-outline {
-      background: transparent;
-      border: 1px solid var(--primary);
-      color: var(--primary);
-    }
-
-    .status-bar {
-      font-size: 13px;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      min-height: 18px;
-    }
-
-    .card-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
+    main { padding: 12px 16px; max-width: 600px; margin: 0 auto; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
 
     .card {
-      background: var(--card-bg);
-      border-radius: 12px;
-      padding: 16px;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-      border: 1px solid var(--border);
-      position: relative;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 14px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.03);
     }
-
-    .card-header-flex {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
+    .card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+    .part-title { font-weight: 700; color: var(--primary); font-size: 16px; }
+    .part-desc { font-size: 14px; margin-bottom: 8px; line-height: 1.3; }
+    .part-loc {
+      display: inline-block; background: var(--badge-bg); color: var(--badge-text);
+      font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; margin-bottom: 8px;
     }
+    .meta-grid { border-top: 1px solid var(--border); padding-top: 6px; font-size: 13px; display: grid; gap: 4px; }
+    .meta-row { display: flex; justify-content: space-between; }
+    .meta-label { color: var(--text-muted); }
 
-    .card-title {
-      font-size: 17px;
-      font-weight: 700;
-      color: var(--primary);
+    /* Bottom Navigation */
+    nav {
+      position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--card-bg);
+      border-top: 1px solid var(--border); display: flex; justify-content: space-around; align-items: center; z-index: 20;
     }
-
-    .badge-btn {
-      font-size: 12px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      background: #eef2ff;
-      color: var(--primary);
-      border: 1px solid #c7d2fe;
-      cursor: pointer;
-    }
-
-    .card-desc {
-      font-size: 15px;
-      color: var(--text-main);
-      margin-bottom: 12px;
-      line-height: 1.35;
-    }
-
-    .divider {
-      height: 1px;
-      background: var(--border);
-      margin: 10px 0;
-    }
-
-    .card-meta {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .meta-row {
-      display: flex;
-      justify-content: space-between;
-      font-size: 14px;
-    }
-
-    .meta-label {
-      color: var(--text-muted);
-    }
-
-    .meta-value {
-      font-weight: 500;
-      text-align: right;
-    }
-
-    .rack-badge {
-      display: inline-block;
-      background: #ecfdf5;
-      color: #065f46;
-      border: 1px solid #a7f3d0;
-      padding: 4px 10px;
-      border-radius: 6px;
-      font-size: 13px;
-      font-weight: 600;
-      margin-top: 6px;
-    }
-
-    .spinner {
-      text-align: center;
-      padding: 40px 0;
-      color: var(--text-muted);
-      font-size: 15px;
-    }
-
-    /* Bottom Navigation Bar */
-    .nav-bar {
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: #ffffff;
-      border-top: 1px solid var(--border);
-      display: flex;
-      justify-content: space-around;
-      align-items: center;
-      padding-bottom: env(safe-area-inset-bottom, 0px);
-      z-index: 100;
-    }
-
     .nav-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      flex: 1;
-      height: 100%;
-      color: var(--text-muted);
-      font-size: 12px;
-      font-weight: 600;
-      cursor: pointer;
-      gap: 3px;
-      position: relative;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      background: none; border: none; font-size: 11px; font-weight: 600; color: var(--text-muted);
+      cursor: pointer; position: relative; width: 33.3%; height: 100%;
+    }
+    .nav-item.active { color: var(--primary); }
+    .badge-count {
+      position: absolute; top: 8px; right: calc(50% - 18px); background: var(--primary);
+      color: #fff; font-size: 10px; border-radius: 10px; padding: 1px 6px; font-weight: 700;
     }
 
-    .nav-item.active {
-      color: var(--primary);
+    /* Modals */
+    .modal {
+      display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+      z-index: 30; align-items: center; justify-content: center; padding: 16px;
     }
-
-    .nav-counter {
-      position: absolute;
-      top: 6px;
-      right: 25%;
-      background: var(--danger);
-      color: #ffffff;
-      font-size: 11px;
-      border-radius: 10px;
-      padding: 1px 6px;
-      display: none;
-    }
-
-    /* Modal / Popup */
-    .modal-overlay {
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0,0,0,0.5);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      z-index: 200;
-    }
-
-    .modal-content {
-      background: #ffffff;
-      border-radius: 12px;
-      width: 100%;
-      max-width: 400px;
-      padding: 20px;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    }
-
-    .modal-title {
-      font-size: 18px;
-      font-weight: 700;
-      margin-bottom: 12px;
-    }
-
-    .modal-actions {
-      display: flex;
-      justify-content: flex-end;
-      gap: 10px;
-      margin-top: 16px;
+    .modal-box {
+      background: #fff; padding: 20px; border-radius: 12px; width: 100%; max-width: 360px;
+      display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15);
     }
   </style>
 </head>
 <body>
 
-  <div class="container">
-    
-    <!-- ==================== TAB 1: MAIN SEARCH ==================== -->
-    <div id="tab-search" class="tab-view">
-      <div class="controls">
-        <div class="row">
-          <div class="input-wrapper">
-            <input type="text" id="searchInput" placeholder="Search (use ; for AND)" autocomplete="off">
-            <button class="clear-btn" id="clearSearch">✕</button>
-          </div>
-          <button class="btn" id="syncBtn">Sync</button>
-        </div>
+  <!-- TAB 1: SEARCH TAB -->
+  <div id="tab-search" class="tab-content active">
+    <header>
+      <div class="input-row">
+        <input type="text" id="searchInput" placeholder="Search (use ; for AND)">
+        <button id="syncBtn" class="btn">Sync</button>
+      </div>
+      <div class="input-row">
+        <input type="number" id="fromInput" placeholder="Part From">
+        <input type="number" id="toInput" placeholder="Part To">
+        <button id="resetBtn" class="btn btn-secondary" style="padding: 10px;">Reset</button>
+      </div>
+      <div class="status-bar">
+        <span id="statusBar">Ready</span>
+      </div>
+    </header>
+    <main id="searchList"></main>
+  </div>
 
-        <div class="row">
-          <input type="number" id="partFrom" placeholder="Part From" pattern="[0-9]*" inputmode="numeric">
-          <input type="number" id="partTo" placeholder="Part To" pattern="[0-9]*" inputmode="numeric">
-          <button class="btn btn-reset" id="resetBtn" style="display: none;">Reset</button>
+  <!-- TAB 2: PICK LIST TAB -->
+  <div id="tab-pick" class="tab-content">
+    <header>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+        <h2 style="font-size: 18px; font-weight: 700;">Pick List</h2>
+        <div style="display: flex; gap: 6px;">
+          <button id="sortPickBtn" class="btn btn-outline" style="font-size: 12px; padding: 6px 10px;">Sort: Time</button>
+          <button id="clearPickBtn" class="btn btn-danger" style="font-size: 12px; padding: 6px 10px;">Clear</button>
         </div>
       </div>
-
-      <div class="status-bar" id="statusBar">Connecting to inventory...</div>
-      <div class="card-list" id="cardList"></div>
-    </div>
-
-    <!-- ==================== TAB 2: TEMPORARY PICK LIST ==================== -->
-    <div id="tab-picklist" class="tab-view" style="display: none;">
-      <div class="controls">
-        <div class="row" style="align-items: center; justify-content: space-between;">
-          <h2 style="font-size: 18px; font-weight: 700;">Pick List</h2>
-          <button class="btn btn-danger" id="clearPickListBtn" style="min-height: 38px; font-size: 13px;">Clear List</button>
-        </div>
+      <div class="status-bar">
+        <span id="pickStatusBar">0 items recorded</span>
       </div>
-      <div class="status-bar" id="pickListStatusBar">0 items selected</div>
-      <div class="card-list" id="pickListContainer"></div>
-    </div>
+    </header>
+    <main id="pickList"></main>
+  </div>
 
-    <!-- ==================== TAB 3: RACK TRACKER ==================== -->
-    <div id="tab-rack" class="tab-view" style="display: none;">
-      <div class="controls">
-        <div class="row">
-          <div class="input-wrapper">
-            <input type="text" id="rackSearchInput" placeholder="Filter assigned racks..." autocomplete="off">
-            <button class="clear-btn" id="clearRackSearch">✕</button>
-          </div>
-          <button class="btn btn-outline" id="adminToggleBtn">Lock 🔒</button>
-        </div>
-        <div class="row" id="adminAddRow" style="display: none;">
-          <button class="btn" id="openAddRackModalBtn" style="width: 100%;">+ Assign Part to Rack</button>
-        </div>
+  <!-- TAB 3: RACKS TAB -->
+  <div id="tab-racks" class="tab-content">
+    <header>
+      <div class="input-row">
+        <input type="text" id="rackFilterInput" placeholder="Filter rack assignments...">
+        <button id="adminPinBtn" class="btn btn-outline">Locked 🔒</button>
       </div>
-      <div class="status-bar" id="rackStatusBar">Viewing mode</div>
-      <div class="card-list" id="rackListContainer"></div>
-    </div>
-
+      <div id="adminActionRow" style="display: none; margin-top: 6px;">
+        <button id="openAssignBtn" class="btn" style="width: 100%;">+ Assign Part to Rack</button>
+      </div>
+      <div class="status-bar">
+        <span id="rackStatusBar">0 rack entries</span>
+      </div>
+    </header>
+    <main id="rackList"></main>
   </div>
 
   <!-- Bottom Navigation -->
-  <nav class="nav-bar">
-    <div class="nav-item active" data-target="tab-search">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <span>Search</span>
-    </div>
-    <div class="nav-item" data-target="tab-picklist">
-      <span class="nav-counter" id="pickBadge">0</span>
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"></path><line x1="3" y1="6" x2="21" y2="6"></line><path d="M16 10a4 4 0 0 1-8 0"></path></svg>
-      <span>Pick List</span>
-    </div>
-    <div class="nav-item" data-target="tab-rack" id="rackTabNav">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
-      <span>Racks</span>
-    </div>
+  <nav>
+    <button class="nav-item active" onclick="switchTab('search')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+      Search
+    </button>
+    <button class="nav-item" onclick="switchTab('pick')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="21" r="1"/><circle cx="19" cy="21" r="1"/><path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12"/></svg>
+      Pick List
+      <span id="pickBadge" class="badge-count" style="display: none;">0</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('racks')">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
+      Racks
+    </button>
   </nav>
 
   <!-- PIN Modal -->
-  <div class="modal-overlay" id="pinModal">
-    <div class="modal-content">
-      <div class="modal-title">Enter Admin Password</div>
-      <input type="password" id="pinInput" placeholder="Password (default: 1234)" autofocus>
-      <div class="modal-actions">
-        <button class="btn btn-outline" id="closePinModal">Cancel</button>
-        <button class="btn" id="submitPin">Unlock</button>
+  <div id="pinModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-size: 16px;">Admin Access</h3>
+      <p style="font-size: 13px; color: var(--text-muted);">Enter admin PIN to modify rack mappings:</p>
+      <input type="password" id="pinInput" placeholder="PIN" inputmode="numeric">
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="cancelPinBtn" class="btn btn-secondary">Cancel</button>
+        <button id="submitPinBtn" class="btn">Unlock</button>
       </div>
     </div>
   </div>
 
-  <!-- Rack Location Assign Modal -->
-  <div class="modal-overlay" id="rackModal">
-    <div class="modal-content">
-      <div class="modal-title" id="rackModalTitle">Assign Rack Location</div>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        <input type="text" id="rackModalPart" placeholder="Part # (e.g. 1000004)">
-        <input type="text" id="rackModalRack" placeholder="Rack (e.g. Rack 4)">
-        <input type="text" id="rackModalSub" placeholder="Sub-Rack / Section (e.g. Section B)">
-      </div>
-      <div class="modal-actions">
-        <button class="btn btn-outline" id="closeRackModal">Cancel</button>
-        <button class="btn" id="saveRackLocationBtn">Save</button>
+  <!-- Rack Assign Modal -->
+  <div id="rackModal" class="modal">
+    <div class="modal-box">
+      <h3 style="font-size: 16px;">Assign Rack Location</h3>
+      <input type="text" id="rackPartInput" placeholder="Part #">
+      <input type="text" id="rackLocInput" placeholder="Rack (e.g. Rack 4)">
+      <input type="text" id="rackSubInput" placeholder="Sub / Section (e.g. Bin 2)">
+      <div style="display: flex; gap: 8px; justify-content: flex-end;">
+        <button id="cancelRackBtn" class="btn btn-secondary">Cancel</button>
+        <button id="saveRackBtn" class="btn">Save</button>
       </div>
     </div>
   </div>
 
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbxotcR5xiKrc7_R0CDIYrY7EYLLzb8mG8Ow_Hb06oS8NDPEkPvJIISBFnxKH1l2KcSK/exec";
-    const ADMIN_PASSWORD = "7864"; // Edit your administrative unlock PIN/password here
+    // --- Register Service Worker for PWA Offline Functionality ---
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(err => {
+          console.warn('Service worker registration failed:', err);
+        });
+      });
+    }
 
-    let cachedCatalog = [];
+    const API_URL = "https://script.google.com/macros/s/AKfycbyYU4BEovQPPaNLkI50fbp9RtYgvlXLYDYOHKA9YNYLNCGQdS8a-LBdqIMHBeUeVBtm/exec";
+
+    let catalog = [];
     let pickList = JSON.parse(localStorage.getItem('parts_pick_list') || '[]');
     let rackRegistry = JSON.parse(localStorage.getItem('parts_rack_registry') || '{}');
     let isAdminUnlocked = false;
 
-    // Element references
-    const searchInput = document.getElementById('searchInput');
-    const clearSearch = document.getElementById('clearSearch');
-    const partFromInput = document.getElementById('partFrom');
-    const partToInput = document.getElementById('partTo');
-    const resetBtn = document.getElementById('resetBtn');
-    const syncBtn = document.getElementById('syncBtn');
-    const statusBar = document.getElementById('statusBar');
-    const cardList = document.getElementById('cardList');
+    // Sorting state for Pick List: 'time' | 'part' | 'vendor'
+    let pickSortMode = 'time';
 
-    const pickListContainer = document.getElementById('pickListContainer');
-    const pickListStatusBar = document.getElementById('pickListStatusBar');
-    const clearPickListBtn = document.getElementById('clearPickListBtn');
-    const pickBadge = document.getElementById('pickBadge');
-
-    const rackListContainer = document.getElementById('rackListContainer');
-    const rackStatusBar = document.getElementById('rackStatusBar');
-    const rackSearchInput = document.getElementById('rackSearchInput');
-    const clearRackSearch = document.getElementById('clearRackSearch');
-    const adminToggleBtn = document.getElementById('adminToggleBtn');
-    const adminAddRow = document.getElementById('adminAddRow');
-
-    const pinModal = document.getElementById('pinModal');
-    const pinInput = document.getElementById('pinInput');
-    const closePinModal = document.getElementById('closePinModal');
-    const submitPin = document.getElementById('submitPin');
-
-    const rackModal = document.getElementById('rackModal');
-    const rackModalPart = document.getElementById('rackModalPart');
-    const rackModalRack = document.getElementById('rackModalRack');
-    const rackModalSub = document.getElementById('rackModalSub');
-    const closeRackModal = document.getElementById('closeRackModal');
-    const saveRackLocationBtn = document.getElementById('saveRackLocationBtn');
+    // Trash can debounce timer to protect against accidental multi-tap
+    let lastDeleteTimestamp = 0;
+    const DELETE_COOLDOWN_MS = 600;
 
     function formatValue(val) {
       if (val === null || val === undefined) return '';
-      var str = String(val).trim();
-      return str.endsWith('.0') ? str.slice(0, -2) : str;
+      let s = String(val).trim();
+      return s.endsWith('.0') ? s.slice(0, -2) : s;
     }
-
-    const COLUMN_CONFIG = {
-      'Part #':      { index: 0, keys: ['Part #', 'Part#', 'Part', 'part'] },
-      'Description': { index: 1, keys: ['Description', 'description', 'Desc', 'desc'] },
-      'Print #':     { index: 2, keys: ['Print #', 'Print#', 'Print', 'print'] },
-      'Vendor':      { index: 3, keys: ['Vendor', 'vendor'] },
-      'Vendor #':    { index: 4, keys: ['Vendor #', 'Vendor#', 'vendor_#', 'vendor_number'] },
-      'Size':        { index: 5, keys: ['Size', 'size'] }
-    };
 
     function getValue(row, column) {
       if (!row || typeof row !== 'object') return '';
-
-      // 1. Strict exact property name match (matches Google Apps Script headers)
       if (row[column] !== undefined && row[column] !== null) {
-        var exactStr = formatValue(row[column]);
-        if (exactStr !== '') return exactStr;
+        let v = formatValue(row[column]);
+        if (v !== '') return v;
       }
-
-      // 2. Strict normalized key dictionary
-      var targetNormalized = column.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-      for (var key in row) {
-        if (!Object.prototype.hasOwnProperty.call(row, key)) continue;
-        
-        var keyNormalized = key.toLowerCase().replace(/[^a-z0-9]/g, '');
-
-        if (targetNormalized === 'part') {
-          if (keyNormalized === 'part' || keyNormalized === 'partno' || keyNormalized === 'partnumber') {
-            return formatValue(row[key]);
-          }
-        } else if (targetNormalized === 'vendor') {
-          // Must match vendor strictly without '#' or 'no'
-          if (keyNormalized === 'vendor') {
-            return formatValue(row[key]);
-          }
-        } else if (targetNormalized === 'vendor') {
-          // Vendor #
-          if (keyNormalized === 'vendor' || keyNormalized === 'vendorno' || keyNormalized === 'vendornumber') {
-            return formatValue(row[key]);
-          }
-        } else if (targetNormalized === 'print') {
-          // Print #
-          if (keyNormalized === 'print' || keyNormalized === 'printno' || keyNormalized === 'printnumber') {
-            return formatValue(row[key]);
-          }
-        } else if (keyNormalized === targetNormalized) {
-          return formatValue(row[key]);
-        }
+      const target = column.toLowerCase().replace(/[^a-z0-9]/g, '');
+      for (const [key, val] of Object.entries(row)) {
+        const cleanKey = key.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (target === 'part' && (cleanKey === 'part' || cleanKey === 'partno' || cleanKey === 'partnumber')) return formatValue(val);
+        if (target === 'vendor' && cleanKey === 'vendor') return formatValue(val);
+        if (target === 'vendorno' && (cleanKey === 'vendor' || cleanKey === 'vendorno' || cleanKey === 'vendornumber')) return formatValue(val);
+        if (target === 'print' && (cleanKey === 'print' || cleanKey === 'printno' || cleanKey === 'printnumber')) return formatValue(val);
+        if (target === 'uom' && (cleanKey === 'uom' || cleanKey === 'unitofmeasure' || cleanKey === 'unit')) return formatValue(val);
+        if (cleanKey === target) return formatValue(val);
       }
-
-      // Return empty string if blank on sheet; do not borrow positional adjacent values
       return '';
     }
 
-    // ==================== NAVIGATION ====================
-    document.querySelectorAll('.nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-        document.querySelectorAll('.tab-view').forEach(t => t.style.display = 'none');
-        
-        item.classList.add('active');
-        const targetId = item.getAttribute('data-target');
-        document.getElementById(targetId).style.display = 'block';
-
-        if (targetId === 'tab-picklist') renderPickList();
-        if (targetId === 'tab-rack') renderRackList();
-      });
-    });
-
-    // Secret long-press on Rack tab button to open unlock modal
-    let rackPressTimer;
-    const rackTabNav = document.getElementById('rackTabNav');
-    rackTabNav.addEventListener('touchstart', () => {
-      rackPressTimer = setTimeout(() => { openPinPrompt(); }, 1200);
-    });
-    rackTabNav.addEventListener('touchend', () => clearTimeout(rackPressTimer));
-    rackTabNav.addEventListener('mousedown', () => {
-      rackPressTimer = setTimeout(() => { openPinPrompt(); }, 1200);
-    });
-    rackTabNav.addEventListener('mouseup', () => clearTimeout(rackPressTimer));
-
-    // ==================== TAB 1: SEARCH & INVENTORY ====================
-    async function fetchInventory() {
-      statusBar.innerText = "Syncing catalog with Google Sheets...";
-      cardList.innerHTML = '<div class="spinner">Fetching data...</div>';
-      
+    async function syncCatalog() {
+      const status = document.getElementById('statusBar');
+      status.innerText = "Syncing catalog from Google Sheets...";
       try {
-        var res = await fetch(API_URL + "?q=");
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        cachedCatalog = await res.json();
-        applyFilters();
+        const res = await fetch(API_URL);
+        const data = await res.json();
+        catalog = data;
+        localStorage.setItem('parts_catalog_cache', JSON.stringify(data));
+        renderSearch();
       } catch (err) {
-        statusBar.innerText = "Error syncing with sheet: " + err.message;
-        cardList.innerHTML = '<div class="spinner" style="color:var(--danger)">Failed to load inventory. Check network or tap Sync.</div>';
+        status.innerText = "Offline. Showing cached catalog.";
+        const cached = localStorage.getItem('parts_catalog_cache');
+        if (cached) {
+          catalog = JSON.parse(cached);
+          renderSearch();
+        }
       }
     }
 
-    function applyFilters() {
-      var rawQuery = searchInput.value || '';
-      var fromVal = parseInt(partFromInput.value, 10);
-      var toVal = parseInt(partToInput.value, 10);
+    function renderSearch() {
+      const q = document.getElementById('searchInput').value.trim().toLowerCase();
+      const fromVal = parseInt(document.getElementById('fromInput').value, 10);
+      const toVal = parseInt(document.getElementById('toInput').value, 10);
+      const keywords = q ? q.split(';').map(k => k.trim()).filter(k => k.length > 0) : [];
 
-      resetBtn.style.display = (rawQuery || !isNaN(fromVal) || !isNaN(toVal)) ? 'block' : 'none';
-      clearSearch.style.display = rawQuery ? 'block' : 'none';
-
-      var keywords = rawQuery
-        .split(';')
-        .map(s => s.trim().toLowerCase())
-        .filter(s => s.length > 0);
-
-      var filtered = cachedCatalog.filter(row => {
-        var partNumber = parseInt(getValue(row, 'Part #'), 10);
-        var matchesRange = true;
-        if (!isNaN(fromVal) && !isNaN(toVal)) {
-          matchesRange = !isNaN(partNumber) && partNumber >= fromVal && partNumber <= toVal;
-        } else if (!isNaN(fromVal)) {
-          matchesRange = !isNaN(partNumber) && partNumber >= fromVal;
-        } else if (!isNaN(toVal)) {
-          matchesRange = !isNaN(partNumber) && partNumber <= toVal;
-        }
-
+      const filtered = catalog.filter(row => {
+        const partNum = parseInt(getValue(row, "Part #"), 10);
+        const matchesRange = (!isNaN(fromVal) && !isNaN(toVal)) ? (partNum >= fromVal && partNum <= toVal) :
+                             (!isNaN(fromVal)) ? (partNum >= fromVal) :
+                             (!isNaN(toVal)) ? (partNum <= toVal) : true;
         if (!matchesRange) return false;
         if (keywords.length === 0) return true;
 
-        var rowContent = Object.values(row).join(" ").toLowerCase();
-        return keywords.every(kw => rowContent.indexOf(kw) !== -1);
+        const rowText = Object.values(row).map(v => formatValue(v).toLowerCase()).join(' ');
+        return keywords.every(kw => rowText.includes(kw));
       });
 
-      renderList(filtered);
-    }
+      document.getElementById('statusBar').innerText = `Showing ${filtered.length} of ${catalog.length} parts`;
+      const container = document.getElementById('searchList');
+      container.innerHTML = '';
 
-    function renderList(items) {
-      if (!cachedCatalog || cachedCatalog.length === 0) return;
-      statusBar.innerText = "Showing " + items.length + " of " + cachedCatalog.length + " parts";
+      filtered.forEach(row => {
+        const partNo = getValue(row, "Part #") || 'N/A';
+        const desc = getValue(row, "Description");
+        const printNo = getValue(row, "Print #");
+        const vendor = getValue(row, "Vendor");
+        const vendorNo = getValue(row, "Vendor #");
+        const size = getValue(row, "Size");
+        const uom = getValue(row, "UoM"); // Added UoM field
+        const rack = rackRegistry[partNo];
 
-      if (items.length === 0) {
-        cardList.innerHTML = '<div class="spinner">No matching parts found.</div>';
-        return;
-      }
-
-      var metaFields = ["Print #", "Vendor", "Vendor #", "Size"];
-
-      cardList.innerHTML = items.map((row, idx) => {
-        var partNo = getValue(row, 'Part #') || "N/A";
-        var desc = getValue(row, 'Description');
-        var rackInfo = rackRegistry[partNo];
-
-        var metaRows = metaFields.map(field => {
-          var val = getValue(row, field);
-          if (!val) return '';
-          return '<div class="meta-row"><span class="meta-label">' + field + '</span><span class="meta-value">' + val + '</span></div>';
-        }).join('');
-
-        return `
-          <div class="card" data-part="${partNo}" oncontextmenu="return false;">
-            <div class="card-header-flex">
-              <div class="card-title">Part: ${partNo}</div>
-              <button class="badge-btn" onclick="addToPickList('${partNo}')">+ Pick</button>
-            </div>
-            ${desc ? `<div class="card-desc">${desc}</div>` : ''}
-            ${rackInfo ? `<div><span class="rack-badge">📍 ${rackInfo.rack} • ${rackInfo.sub}</span></div>` : ''}
-            ${metaRows ? `<div class="divider"></div><div class="card-meta">${metaRows}</div>` : ''}
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-head">
+            <span class="part-title">Part: ${partNo}</span>
+            <button class="btn btn-secondary" style="font-size: 12px; padding: 4px 8px;" onclick="addToPick('${partNo}')">+ Pick</button>
+          </div>
+          ${desc ? `<div class="part-desc">${desc}</div>` : ''}
+          ${rack ? `<div class="part-loc">📍 ${rack.rack} • ${rack.sub}</div>` : ''}
+          <div class="meta-grid">
+            ${printNo ? `<div class="meta-row"><span class="meta-label">Print #</span><span>${printNo}</span></div>` : ''}
+            ${vendor ? `<div class="meta-row"><span class="meta-label">Vendor</span><span>${vendor}</span></div>` : ''}
+            ${vendorNo ? `<div class="meta-row"><span class="meta-label">Vendor #</span><span>${vendorNo}</span></div>` : ''}
+            ${size ? `<div class="meta-row"><span class="meta-label">Size</span><span>${size}</span></div>` : ''}
+            ${uom ? `<div class="meta-row"><span class="meta-label">UoM</span><span style="font-weight: 600;">${uom}</span></div>` : ''}
           </div>
         `;
-      }).join('');
-
-      bindLongPressToCards();
-    }
-
-    function bindLongPressToCards() {
-      document.querySelectorAll('#cardList .card').forEach(card => {
-        let timer;
-        const partNo = card.getAttribute('data-part');
-
-        const start = () => {
-          timer = setTimeout(() => {
-            addToPickList(partNo);
-            if (navigator.vibrate) navigator.vibrate(50);
-          }, 600);
-        };
-        const cancel = () => clearTimeout(timer);
-
-        card.addEventListener('touchstart', start);
-        card.addEventListener('touchend', cancel);
-        card.addEventListener('mousedown', start);
-        card.addEventListener('mouseup', cancel);
+        container.appendChild(card);
       });
     }
 
-    // ==================== TAB 2: TEMPORARY PICK LIST ====================
-    window.addToPickList = function(partNo) {
-      if (!partNo || partNo === "N/A") return;
-      const existing = cachedCatalog.find(r => getValue(r, 'Part #') === partNo);
-      if (!existing) return;
+    // --- Pick List Logic ---
+    function addToPick(partNo) {
+      const row = catalog.find(r => getValue(r, "Part #") === partNo);
+      if (!row) return;
 
-      const desc = getValue(existing, 'Description');
-      const vendor = getValue(existing, 'Vendor');
+      const desc = getValue(row, "Description");
+      const vendor = getValue(row, "Vendor");
+      const vendorDesc = getValue(row, "Vendor Description") || getValue(row, "Vendor Desc");
+      const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
       pickList.push({
         id: Date.now() + Math.random(),
         partNo: partNo,
         desc: desc,
         vendor: vendor,
-        addedAt: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+        vendorDesc: vendorDesc,
+        addedAt: timeStr,
+        timestamp: Date.now()
       });
 
       localStorage.setItem('parts_pick_list', JSON.stringify(pickList));
       updatePickBadge();
-      alert(`Part ${partNo} added to Pick List`);
-    };
-
-    function updatePickBadge() {
-      if (pickList.length > 0) {
-        pickBadge.style.display = 'block';
-        pickBadge.innerText = pickList.length;
-      } else {
-        pickBadge.style.display = 'none';
-      }
+      renderPickList();
     }
 
-    function renderPickList() {
-      pickListStatusBar.innerText = `${pickList.length} item(s) selected`;
-
-      if (pickList.length === 0) {
-        pickListContainer.innerHTML = '<div class="spinner">Pick List is empty. Long-press parts or tap "+ Pick" on the search tab.</div>';
+    function removePickItem(id) {
+      const now = Date.now();
+      // Guard against lingering finger taps
+      if (now - lastDeleteTimestamp < DELETE_COOLDOWN_MS) {
         return;
       }
+      lastDeleteTimestamp = now;
 
-      pickListContainer.innerHTML = pickList.map(item => `
-        <div class="card">
-          <div class="card-header-flex">
-            <div class="card-title">Part: ${item.partNo}</div>
-            <button class="badge-btn" style="color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="removePickItem(${item.id})">Remove</button>
-          </div>
-          ${item.desc ? `<div class="card-desc">${item.desc}</div>` : ''}
-          <div class="divider"></div>
-          <div class="card-meta">
-            <div class="meta-row"><span class="meta-label">Vendor</span><span class="meta-value">${item.vendor || 'N/A'}</span></div>
-            <div class="meta-row"><span class="meta-label">Added</span><span class="meta-value">${item.addedAt}</span></div>
-          </div>
-        </div>
-      `).join('');
-    }
-
-    window.removePickItem = function(id) {
       pickList = pickList.filter(item => item.id !== id);
       localStorage.setItem('parts_pick_list', JSON.stringify(pickList));
       updatePickBadge();
       renderPickList();
-    };
+    }
 
-    clearPickListBtn.addEventListener('click', () => {
-      if (pickList.length === 0) return;
-      const confirmClear = window.confirm("Are you sure you want to clear all items from your Pick List?");
-      if (confirmClear) {
+    function updatePickBadge() {
+      const badge = document.getElementById('pickBadge');
+      if (pickList.length > 0) {
+        badge.innerText = pickList.length;
+        badge.style.display = 'block';
+      } else {
+        badge.style.display = 'none';
+      }
+      document.getElementById('pickStatusBar').innerText = `${pickList.length} items recorded`;
+    }
+
+    function togglePickSort() {
+      const btn = document.getElementById('sortPickBtn');
+      if (pickSortMode === 'time') {
+        pickSortMode = 'part';
+        btn.innerText = "Sort: Part # ↑";
+      } else if (pickSortMode === 'part') {
+        pickSortMode = 'vendor';
+        btn.innerText = "Sort: Vendor → Part";
+      } else {
+        pickSortMode = 'time';
+        btn.innerText = "Sort: Time";
+      }
+      renderPickList();
+    }
+
+    function renderPickList() {
+      const container = document.getElementById('pickList');
+      container.innerHTML = '';
+
+      if (pickList.length === 0) {
+        container.innerHTML = `<div style="text-align: center; color: var(--text-muted); margin-top: 40px; font-size: 14px;">Pick List is empty. Tap '+ Pick' on any item.</div>`;
+        return;
+      }
+
+      // Clone and sort
+      let sortedItems = [...pickList];
+      if (pickSortMode === 'part') {
+        sortedItems.sort((a, b) => {
+          const numA = parseInt(a.partNo, 10) || 0;
+          const numB = parseInt(b.partNo, 10) || 0;
+          return numA - numB;
+        });
+      } else if (pickSortMode === 'vendor') {
+        sortedItems.sort((a, b) => {
+          const vA = (a.vendor || '').toLowerCase();
+          const vB = (b.vendor || '').toLowerCase();
+          if (vA !== vB) return vA.localeCompare(vB);
+          return (parseInt(a.partNo, 10) || 0) - (parseInt(b.partNo, 10) || 0);
+        });
+      } else {
+        // Chronological by added time
+        sortedItems.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      }
+
+      sortedItems.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+          <div class="card-head">
+            <span class="part-title">Part: ${item.partNo}</span>
+            <button class="btn btn-outline" style="border-color: var(--danger); color: var(--danger); padding: 4px 8px;" onclick="removePickItem(${item.id})">
+              🗑️
+            </button>
+          </div>
+          ${item.desc ? `<div class="part-desc">${item.desc}</div>` : ''}
+          <div class="meta-grid">
+            ${item.vendorDesc ? `<div class="meta-row"><span class="meta-label">Vendor Desc</span><span style="font-weight: 500;">${item.vendorDesc}</span></div>` : ''}
+            <div class="meta-row"><span class="meta-label">Vendor</span><span>${item.vendor || 'N/A'}</span></div>
+            <div class="meta-row"><span class="meta-label">Added</span><span>${item.addedAt}</span></div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    // --- Tab Switching ---
+    function switchTab(tabId) {
+      document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+      document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+      
+      document.getElementById(`tab-${tabId}`).classList.add('active');
+      event.currentTarget.classList.add('active');
+
+      if (tabId === 'pick') renderPickList();
+      if (tabId === 'racks') renderRacks();
+    }
+
+    // --- Admin PIN & Modal Controls ---
+    document.getElementById('adminPinBtn').addEventListener('click', () => {
+      if (isAdminUnlocked) {
+        // If already unlocked, clicking the button re-locks admin mode
+        isAdminUnlocked = false;
+        document.getElementById('adminPinBtn').innerText = 'Locked 🔒';
+        document.getElementById('adminActionRow').style.display = 'none';
+        renderRacks();
+      } else {
+        // Open the PIN modal
+        document.getElementById('pinInput').value = '';
+        document.getElementById('pinModal').style.display = 'flex';
+        document.getElementById('pinInput').focus();
+      }
+    });
+
+    document.getElementById('cancelPinBtn').addEventListener('click', () => {
+      document.getElementById('pinModal').style.display = 'none';
+    });
+
+    document.getElementById('submitPinBtn').addEventListener('click', () => {
+      const pinEntered = document.getElementById('pinInput').value.trim();
+
+      // Set your desired Admin PIN here
+      const TARGET_PIN = '130189';
+
+      if (pinEntered === TARGET_PIN) {
+        isAdminUnlocked = true;
+        document.getElementById('adminPinBtn').innerText = 'Unlocked 🔓';
+        document.getElementById('adminActionRow').style.display = 'block';
+        document.getElementById('pinModal').style.display = 'none';
+        document.getElementById('pinInput').value = '';
+        renderRacks();
+      } else {
+        alert('Incorrect PIN');
+      }
+    });
+  
+    // --- Event Listeners & Initialization ---
+    document.getElementById('searchInput').addEventListener('input', renderSearch);
+    document.getElementById('fromInput').addEventListener('input', renderSearch);
+    document.getElementById('toInput').addEventListener('input', renderSearch);
+    document.getElementById('syncBtn').addEventListener('click', syncCatalog);
+    document.getElementById('sortPickBtn').addEventListener('click', togglePickSort);
+    document.getElementById('clearPickBtn').addEventListener('click', () => {
+      if (confirm("Clear all items from your Pick List?")) {
         pickList = [];
-        localStorage.removeItem('parts_pick_list');
+        localStorage.setItem('parts_pick_list', JSON.stringify(pickList));
         updatePickBadge();
         renderPickList();
       }
     });
 
-    // ==================== TAB 3: RACK TRACKER ====================
-    function renderRackList() {
-      const q = (rackSearchInput.value || '').toLowerCase();
-      const parts = Object.keys(rackRegistry).filter(part => {
-        const item = rackRegistry[part];
-        const matchStr = `${part} ${item.rack} ${item.sub}`.toLowerCase();
-        return matchStr.includes(q);
-      });
+    document.getElementById('resetBtn').addEventListener('click', () => {
+      document.getElementById('searchInput').value = '';
+      document.getElementById('fromInput').value = '';
+      document.getElementById('toInput').value = '';
+      renderSearch();
+    });
 
-      rackStatusBar.innerText = `${parts.length} rack assignments saved ${isAdminUnlocked ? '• Admin Unlocked' : '• Read-Only'}`;
-
-      if (parts.length === 0) {
-        rackListContainer.innerHTML = '<div class="spinner">No rack locations assigned yet.</div>';
-        return;
-      }
-
-      rackListContainer.innerHTML = parts.map(partNo => {
-        const item = rackRegistry[partNo];
-        return `
-          <div class="card">
-            <div class="card-header-flex">
-              <div class="card-title">Part: ${partNo}</div>
-              ${isAdminUnlocked ? `
-                <div style="display:flex; gap:6px;">
-                  <button class="badge-btn" onclick="editRackLocation('${partNo}')">Edit</button>
-                  <button class="badge-btn" style="color:var(--danger); border-color:#fecaca; background:#fef2f2;" onclick="deleteRackLocation('${partNo}')">Delete</button>
-                </div>
-              ` : ''}
-            </div>
-            <div>
-              <span class="rack-badge">📍 ${item.rack} • ${item.sub}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
+    // Load cached catalog immediately for instant offline start
+    const cachedData = localStorage.getItem('parts_catalog_cache');
+    if (cachedData) {
+      try {
+        catalog = JSON.parse(cachedData);
+        renderSearch();
+      } catch (e) {}
     }
-
-    function openPinPrompt() {
-      if (isAdminUnlocked) {
-        if (window.confirm("Lock admin editing mode?")) {
-          isAdminUnlocked = false;
-          adminToggleBtn.innerText = "Lock 🔒";
-          adminAddRow.style.display = "none";
-          renderRackList();
-          renderList(cachedCatalog);
-        }
-        return;
-      }
-      pinInput.value = '';
-      pinModal.style.display = 'flex';
-    }
-
-    adminToggleBtn.addEventListener('click', openPinPrompt);
-    closePinModal.addEventListener('click', () => pinModal.style.display = 'none');
-
-    submitPin.addEventListener('click', () => {
-      if (pinInput.value === ADMIN_PASSWORD) {
-        isAdminUnlocked = true;
-        pinModal.style.display = 'none';
-        adminToggleBtn.innerText = "Unlocked 🔓";
-        adminAddRow.style.display = "flex";
-        renderRackList();
-        renderList(cachedCatalog);
-      } else {
-        alert("Incorrect password.");
-      }
-    });
-
-    document.getElementById('openAddRackModalBtn').addEventListener('click', () => {
-      document.getElementById('rackModalTitle').innerText = "Assign Rack Location";
-      rackModalPart.value = '';
-      rackModalPart.disabled = false;
-      rackModalRack.value = '';
-      rackModalSub.value = '';
-      rackModal.style.display = 'flex';
-    });
-
-    closeRackModal.addEventListener('click', () => rackModal.style.display = 'none');
-
-    saveRackLocationBtn.addEventListener('click', () => {
-      const part = rackModalPart.value.trim();
-      const rack = rackModalRack.value.trim();
-      const sub = rackModalSub.value.trim();
-
-      if (!part || !rack) {
-        alert("Part # and Rack are required.");
-        return;
-      }
-
-      rackRegistry[part] = { rack: rack, sub: sub || 'General' };
-      localStorage.setItem('parts_rack_registry', JSON.stringify(rackRegistry));
-      rackModal.style.display = 'none';
-      renderRackList();
-      applyFilters();
-    });
-
-    window.editRackLocation = function(partNo) {
-      const current = rackRegistry[partNo];
-      if (!current) return;
-      document.getElementById('rackModalTitle').innerText = `Edit Location: ${partNo}`;
-      rackModalPart.value = partNo;
-      rackModalPart.disabled = true;
-      rackModalRack.value = current.rack;
-      rackModalSub.value = current.sub;
-      rackModal.style.display = 'flex';
-    };
-
-    window.deleteRackLocation = function(partNo) {
-      if (window.confirm(`Delete rack mapping for Part ${partNo}?`)) {
-        delete rackRegistry[partNo];
-        localStorage.setItem('parts_rack_registry', JSON.stringify(rackRegistry));
-        renderRackList();
-        applyFilters();
-      }
-    };
-
-    rackSearchInput.addEventListener('input', renderRackList);
-    clearRackSearch.addEventListener('click', () => {
-      rackSearchInput.value = '';
-      renderRackList();
-    });
-
-    // ==================== EVENT LISTENERS & INIT ====================
-    searchInput.addEventListener('input', applyFilters);
-    partFromInput.addEventListener('input', applyFilters);
-    partToInput.addEventListener('input', applyFilters);
-
-    clearSearch.addEventListener('click', () => {
-      searchInput.value = '';
-      applyFilters();
-    });
-
-    resetBtn.addEventListener('click', () => {
-      searchInput.value = '';
-      partFromInput.value = '';
-      partToInput.value = '';
-      applyFilters();
-    });
-
-    syncBtn.addEventListener('click', fetchInventory);
-
-    // Initial setup
     updatePickBadge();
-    fetchInventory();
+    syncCatalog();
   </script>
 </body>
 </html>
